@@ -1,0 +1,116 @@
+import java.util.LinkedList;
+
+public class Main
+{
+    public static void main(String[] args)
+            throws InterruptedException
+    {
+        final ProducerConsumer pc = new ProducerConsumer();
+
+        // Create producer thread
+        Thread t1 = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    pc.produce();
+                }
+                catch(InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        // Create consumer thread
+        Thread t2 = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    pc.consume();
+                }
+                catch(InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        // Start both threads
+        t1.start();
+        t2.start();
+
+        // t1 finishes before t2
+
+
+        t1.join();
+        t2.join();
+
+
+    }
+
+    static class ProducerConsumer
+    {
+        // Create a list shared by producer and consumer
+        // Size of list is 2.
+        LinkedList<Integer> list = new LinkedList<>();
+        int capacity = 3; //buffer size
+
+        // Function called by producer thread
+        public void produce() throws InterruptedException
+        {
+            int value = 0;
+            while (true) //to go on forever
+                {
+                synchronized (this)
+                {
+                    while (list.size()==capacity) {
+                        System.out.println("\n=======PRODUCER IS WAITING======\n ");
+                        wait();
+                    }
+
+                    System.out.println("Producer produced item-"
+                            + value);
+
+                    // to insert the item in the list
+                    list.add(value++);
+
+                    notify(); //notifies consumer that an item is available now
+
+                    Thread.sleep(1000); //Just for slow mo
+                }
+            }
+        }
+
+        // Function called by consumer thread
+        public void consume() throws InterruptedException
+        {
+            while (true)//to go on forever
+            {
+                synchronized (this)
+                {
+                    while (list.size()==0) {
+                        System.out.println("\n=======CONSUMER IS WAITING======\n");
+                        wait();
+                    }
+
+                    int val = list.removeFirst();
+
+                    System.out.println("Consumer consumed item-"
+                            + val);
+
+                    // Wake up producer thread
+                    notify();
+
+                    // and sleep
+                    Thread.sleep(1000);
+                }
+            }
+        }
+    }
+}
